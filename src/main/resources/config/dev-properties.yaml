@@ -1,0 +1,24 @@
+listener:
+  basePath: "/notification-pa/*"
+  console: "/console/*"
+  https:
+    host: "0.0.0.0"
+    port: "8083"
+    tls:
+      keyPassword: vfrcbv2142
+      password: vfrcbv2142
+
+# MongoDB-system-api #
+mongodb:
+  basePath: "/mondodb-sa"
+  host: "localhost"
+  port: "8081"
+  
+# Cryptocurrency-system-api #
+cryptocurrency:
+  basePath: "/creptocurrency-sa"
+  host: "localhost"
+  port: "8082"
+  
+scheduler:
+  frequency: "60"

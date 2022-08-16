@@ -1,0 +1,183 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:batch="http://www.mulesoft.org/schema/mule/batch" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/batch http://www.mulesoft.org/schema/mule/batch/current/mule-batch.xsd">
+	<flow name="notificationFlow" doc:id="0757f2f1-c9a8-4fda-a7dd-4881a16dd468" >
+		<scheduler doc:name="Scheduler" doc:id="ae9b81c8-cac3-4cb8-bcfc-0d20d3d1b803" >
+			<scheduling-strategy >
+				<fixed-frequency frequency="${scheduler.frequency}" timeUnit="MINUTES"/>
+			</scheduling-strategy>
+		</scheduler>
+		<http:request method="GET" doc:name="getCryptocurrenciesAndSetCryptocurrenciesVar" doc:id="e96720a8-2e0a-45ed-9c21-8332a6801773" config-ref="HTTP_Request_configuration_to_cryptocurrency-system-api" path="/cryptocurrencies" target="cryptocurrencies"/>
+		<http:request method="GET" doc:name="getAllUsers" doc:id="13559930-eb8d-41fa-a788-2f21aabd1a90" config-ref="HTTP_Request_configuration_to_mongodb-system-api" path="/users" >
+			<http:response-validator >
+				<http:success-status-code-validator values="200..599" />
+			</http:response-validator>
+		</http:request>
+		<batch:job jobName="batchJob" doc:id="54f31e98-b992-4127-9237-6d25b1188d97" >
+			<batch:process-records >
+				<batch:step name="filterBatchStep" doc:id="60e0ab76-af3f-4ca1-95b8-d1730d4b4830" >
+					<ee:transform doc:name="searchNotificationForNowAndFormatPayload" doc:id="061d353b-002b-4b2e-91a6-754be653118e" >
+						<ee:message >
+							<ee:set-payload ><![CDATA[%dw 2.0
+fun formatLocalTime() = (now() >> "Etc/GMT-3") as String { format: "HH:mm" }
+fun checkIfNotify(user: Object) = if ((user.notifyAt.period == "h") and 
+		(user.notifyAt.atTime contains formatLocalTime())) true
+	else if ((user.notifyAt.period == "d") and 
+		(user.notifyAt.inDays contains (now() >> "Etc/GMT-3") as String {format: "EEEE"}) and 
+		(user.notifyAt.atTime contains formatLocalTime())) true
+	else false
+output application/json
+---
+if (checkIfNotify(payload)) payload.cryptocurrencies map (object, index) -> do {
+    var cryptocurrency = vars.cryptocurrencies[(vars.cryptocurrencies.symbol find object.symbol)[0]]
+    ---
+    {
+    'Name': cryptocurrency.name,
+    'You bought for': object.userPrice,
+    'Price now':  cryptocurrency.price,
+    'Change for 1 hour': cryptocurrency.percentChange1h,
+    'Change for 24 hours': cryptocurrency.percentChange24h,
+    'Change for 7 days': cryptocurrency.percentChange7d,
+    'Change for 30 days': cryptocurrency.percentChange30d
+    }
+} ++ 'subsribedIn': payload.subscribedIn
+else {}]]></ee:set-payload>
+						</ee:message>
+					</ee:transform>
+				</batch:step>
+				<batch:step name="sendBatchStep" doc:id="0322054e-2885-48f8-bb5f-86ee2421270a" acceptExpression="#[!isEmpty(payload)]">
+					<scatter-gather doc:name="Scatter-Gather" doc:id="fb3935ca-0b3d-4475-8284-636e4373bf7e">
+						<route >
+							<ee:transform doc:name="sendToTelegram" doc:id="68e4e39b-0173-473b-bc53-d15d9ca1a391" >
+								<ee:message >
+									<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+if (payload.subscribeIn.telegram?)
+	lookup(payload, 'sendToTelegramFlow', 5000)
+else
+	null]]></ee:set-payload>
+								</ee:message>
+							</ee:transform>
+						</route>
+					</scatter-gather>
+				</batch:step>
+			</batch:process-records>
+		</batch:job>
+	</flow>
+	<flow name="sendToTelegramFlow" doc:id="0b437dd6-5b0e-49b3-8d75-26232154d4ee" />
+	<sub-flow name="sendToWhatsAppSubFlow" doc:id="4e3a236e-061b-4e27-8e61-05eb469a8cd3" >
+		<logger level="INFO" doc:name="notImplemented" doc:id="4c6fead2-5697-4d61-9a17-dd152920dec3" />
+	</sub-flow>
+	<sub-flow name="sendToEmailSubFlow" doc:id="3c15c0b2-fff6-4d9d-bbf8-11bd8a03d0b7" >
+		<logger level="INFO" doc:name="notImplemented" doc:id="1f60561c-78f3-44cb-adf0-5d2a26424210" />
+	</sub-flow>
+	<sub-flow name="getUserSubFlow" doc:id="0b730cea-4ffb-409e-9375-e9319bc169c1" >
+		<http:request method="GET" doc:name="getUser" doc:id="3e5000e6-b68f-4dde-95b5-1f8a0157c999" config-ref="HTTP_Request_configuration_to_mongodb-system-api" path="/user" >
+			<http:query-params ><![CDATA[#[output application/java
+---
+{
+	"identifier" : attributes.queryParams.identifier,
+	"platform" : attributes.queryParams.platform
+}]]]></http:query-params>
+			<http:response-validator >
+				<http:success-status-code-validator values="200..599" />
+			</http:response-validator>
+		</http:request>
+		<flow-ref doc:name="validateResponseSubFlow" doc:id="4f5c8f27-b428-4025-a8f4-8ebd30279a90" name="validateResponseSubFlow" />
+	</sub-flow>
+	<sub-flow name="subscribeUserSubFlow" doc:id="e2360e1f-e466-47a9-bde7-365549a42e17" >
+		<set-variable value="#[payload]" doc:name="setInputPayload" doc:id="8f75805a-e4b0-4342-9416-13fa8b3ee879" variableName="inputPayload"/>
+		<flow-ref doc:name="checkIfUserExistSubFlow" doc:id="acae5f6d-af53-43bf-8cc1-bdd4f73dbc95" name="checkIfUserExistSubFlow" />
+		<choice doc:name="Choice" doc:id="bdef0759-52a5-43b2-9796-1b2b435724e3" >
+			<when expression="#[isEmpty(vars.userData)]">
+				<http:request method="POST" doc:name="createUser" doc:id="10375ce8-db79-40ca-86dd-9894bf488cf1" config-ref="HTTP_Request_configuration_to_mongodb-system-api" path="/user">
+					<http:response-validator >
+						<http:success-status-code-validator values="200..599" />
+					</http:response-validator>
+				</http:request>
+				<flow-ref doc:name="validateResponseSubFlow" doc:id="e0466fc6-1914-41cc-bb19-1482b13a4258" name="validateResponseSubFlow"/>
+			</when>
+			<otherwise>
+				<ee:transform doc:name="set409HttpStatusAndCustomErrorDescription" doc:id="357d03c5-4a5c-4b86-87f0-17d723cfb6d6">
+					<ee:message />
+					<ee:variables>
+						<ee:set-variable variableName="httpStatus"><![CDATA["409"]]></ee:set-variable>
+						<ee:set-variable variableName="customErrorDescription"><![CDATA["The same user already exists"]]></ee:set-variable>
+					</ee:variables>
+				</ee:transform>
+				<flow-ref doc:name="commonUtilsErrorHandlerSubFlow" doc:id="9114a4e4-a318-45b8-8480-05793a25cb1c" name="commonUtilsErrorHandlerSubFlow"/>
+			</otherwise>
+		</choice>
+	</sub-flow>
+	<sub-flow name="updateUserSubscriptionsSubFlow" doc:id="5546d1c7-ace6-482e-b16d-663f2058ff29" >
+		<set-variable value="#[payload]" doc:name="setInputPayload" doc:id="c001afa1-173d-428b-9ca1-2ce38f23eb58" variableName="inputPayload" />
+		<flow-ref doc:name="checkIfUserExistSubFlow" doc:id="49ce209e-4c18-43a5-86f7-b6830b0255d7" name="checkIfUserExistSubFlow"/>
+		<choice doc:name="Choice" doc:id="f214e73f-a88b-46b6-aee9-debad14ceae4" >
+			<when expression="#[!isEmpty(vars.userData)]" >
+				<choice doc:name="Choice" doc:id="0cf5104f-c874-4bea-bc47-0e7466cd9252" >
+					<when expression="#[vars.inputPayload.notifyAt?]">
+						<http:request method="PATCH" doc:name="updateUserNotificationTime" doc:id="e90260ed-7c92-46c4-abb5-a40159f73bf9" config-ref="HTTP_Request_configuration_to_mongodb-system-api" path="/user">
+					<http:body ><![CDATA[#[payload ++ vars.userData.cryptocurrencies]]]></http:body>
+							<http:response-validator>
+						<http:success-status-code-validator values="200..599" />
+					</http:response-validator>
+				</http:request>
+					</when>
+					<otherwise >
+						<http:request method="PATCH" doc:name="updateUserCryptocurrencyList" doc:id="7cb3f7c9-a696-428e-954a-4cc7260a80a8" config-ref="HTTP_Request_configuration_to_mongodb-system-api" path="/user" >
+							<http:body ><![CDATA[#[payload ++ vars.userData.notifyAt]]]></http:body>
+							<http:response-validator >
+								<http:success-status-code-validator values="200..599" />
+							</http:response-validator>
+						</http:request>
+					</otherwise>
+				</choice>
+				<flow-ref doc:name="validateResponseSubFlow" doc:id="3fe357d0-cf00-487d-982b-9b4fc003849f" name="validateResponseSubFlow" />
+			</when>
+			<otherwise >
+				<ee:transform doc:name="set404HttpStatusAndCustomErrorDescription" doc:id="b4c27995-0d1a-4b06-95e3-f763ea1c8bc4" >
+					<ee:message />
+					<ee:variables >
+						<ee:set-variable variableName="httpStatus" ><![CDATA["409"]]></ee:set-variable>
+						<ee:set-variable variableName="customErrorDescription" ><![CDATA["User doesn't exist"]]></ee:set-variable>
+					</ee:variables>
+				</ee:transform>
+				<flow-ref doc:name="commonUtilsErrorHandlerSubFlow" doc:id="e50465f8-a003-45e1-af65-4646aafd19d5" name="commonUtilsErrorHandlerSubFlow" />
+			</otherwise>
+		</choice>
+	</sub-flow>
+	<sub-flow name="unsubscribeUserSubFlow" doc:id="5b681436-bb3b-499d-93b3-5aea785f2bee" >
+		<http:request method="DELETE" doc:name="deleteUser" doc:id="a73077f2-ee78-4d75-ba9d-a0fb59407864" config-ref="HTTP_Request_configuration_to_mongodb-system-api" path="/user">
+			<http:query-params ><![CDATA[#[output application/java
+---
+{
+	"identifier" : attributes.queryParams.identifier,
+	"platform" : attributes.queryParams.platform
+}]]]></http:query-params>
+			<http:response-validator >
+				<http:success-status-code-validator values="200..599" />
+			</http:response-validator>
+		</http:request>
+		<flow-ref doc:name="validateResponseSubFlow" doc:id="f4261455-78e9-437a-9cde-e1262846dce1" name="validateResponseSubFlow"/>
+	</sub-flow>
+	<sub-flow name="checkIfUserExistSubFlow" doc:id="68b0c1dc-12a3-42d7-b8b2-9106cf3a6130" >
+		<http:request method="GET" doc:name="checkIfUserAlreadyExistsAndSetUserDataVar" doc:id="187d3679-9c76-4edc-993c-9fe27c9edbc2" config-ref="HTTP_Request_configuration_to_mongodb-system-api" path="/user" target="userData" >
+			<http:query-params ><![CDATA[#[output application/java
+---
+{
+	"identifier" : (payload.subscribedIn)[0],
+	"platform" : keysOf(payload.subscribedIn)[0]
+}]]]></http:query-params>
+		</http:request>
+	</sub-flow>
+	<sub-flow name="validateResponseSubFlow" doc:id="a8bd04e1-2229-4fd3-873b-b5cfaa862344">
+		<set-variable value="#[attributes.statusCode]" doc:name="setHttpStatus" doc:id="ca58744d-d79c-43f0-8c59-13f189dbb729" variableName="httpStatus" />
+		<set-payload value='#["something"]' doc:name="setResponse" doc:id="36c5e8f1-61e1-4eeb-bde8-ff31ef12b2e0" />
+	</sub-flow>
+</mule>

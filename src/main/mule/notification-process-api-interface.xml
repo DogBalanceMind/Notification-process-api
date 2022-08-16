@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd ">
+    <flow name="notification-process-api-main">
+        <http:listener config-ref="notification-process-api-httpsListenerConfig" path="${listener.basePath}">
+            <http:response statusCode="#[vars.httpStatus default 200]">
+                <http:headers><![CDATA[#[vars.outboundHeaders default {}]]]></http:headers>
+            </http:response>
+            <http:error-response statusCode="#[vars.httpStatus default 500]">
+                <http:body><![CDATA[#[payload]]]></http:body>
+                <http:headers><![CDATA[#[vars.outboundHeaders default {}]]]></http:headers>
+            </http:error-response>
+        </http:listener>
+        <flow-ref doc:name="logInfoSubFlow" doc:id="353841ae-3f0a-46b7-b54c-eebc596ab9fd" name="logInfoSubFlow" />
+        <flow-ref doc:name="initialSubFlow" doc:id="835da3dc-d288-4385-8543-c75d6302c326" name="initialSubFlow" />
+        <apikit:router config-ref="notification-process-api-config" />
+        <flow-ref doc:name="logInfoSubFlow" doc:id="03202b2c-436b-4e7c-828c-0c4136b9f807" name="logInfoSubFlow" />
+        <error-handler ref="globalErrorHandler" />
+    </flow>
+    <flow name="notification-process-api-console">
+        <http:listener config-ref="notification-process-api-httpsListenerConfig" path="${listener.console}">
+            <http:response statusCode="#[vars.httpStatus default 200]">
+                <http:headers><![CDATA[#[vars.outboundHeaders default {}]]]></http:headers>
+            </http:response>
+            <http:error-response statusCode="#[vars.httpStatus default 500]">
+                <http:body><![CDATA[#[payload]]]></http:body>
+                <http:headers><![CDATA[#[vars.outboundHeaders default {}]]]></http:headers>
+            </http:error-response>
+        </http:listener>
+        <apikit:console config-ref="notification-process-api-config" />
+        <error-handler ref="globalErrorHandler" />
+    </flow>
+    <flow name="post:\subscribe:application\json:notification-process-api-config">
+        <ee:transform doc:name="setFlowNameVar" doc:id="c51360d8-a1cb-4a03-b144-cde702448ec8">
+            <ee:message />
+            <ee:variables>
+                <ee:set-variable resource="dwl/flowNameVar.dwl" variableName="flowName" />
+            </ee:variables>
+        </ee:transform>
+        <flow-ref doc:name="subscribeUserSubFlow" doc:id="436a3d31-59ac-43e4-aa9b-367e9ddb8b37" name="subscribeUserSubFlow" />
+    </flow>
+    <flow name="delete:\subscribe:notification-process-api-config">
+        <ee:transform doc:name="setFlowNameVar" doc:id="0e80fa54-f88d-460b-bcfe-7462525fa2c6">
+            <ee:message />
+            <ee:variables>
+                <ee:set-variable resource="dwl/flowNameVar.dwl" variableName="flowName" />
+            </ee:variables>
+        </ee:transform>
+        <flow-ref doc:name="unsubscribeUserSubFlow" doc:id="c3a5d32d-9b74-4432-a09b-be1ecf8b7a1d" name="unsubscribeUserSubFlow" />
+    </flow>
+    <flow name="patch:\subscribe:application\json:notification-process-api-config">
+        <ee:transform doc:name="setFlowNameVar" doc:id="871876fe-ec02-429e-b3e2-da39cd7b4bd6">
+            <ee:message />
+            <ee:variables>
+                <ee:set-variable resource="dwl/flowNameVar.dwl" variableName="flowName" />
+            </ee:variables>
+        </ee:transform>
+        <flow-ref doc:name="updateUserSubscriptionsSubFlow" doc:id="cef873e9-ede3-4c3c-bd45-45d3bd639e6f" name="updateUserSubscriptionsSubFlow" />
+    </flow>
+    <flow name="get:\subscribe:notification-process-api-config">
+        <ee:transform doc:name="setFlowNameVar" doc:id="306ac4a0-92a7-4ffd-8f48-577750a19a28">
+            <ee:message />
+            <ee:variables>
+                <ee:set-variable resource="dwl/flowNameVar.dwl" variableName="flowName" />
+            </ee:variables>
+        </ee:transform>
+        <flow-ref doc:name="getUserSubFlow" doc:id="d212bdda-9a20-45a7-ac8c-c3f5066013ef" name="getUserSubFlow" />
+    </flow>
+</mule>
