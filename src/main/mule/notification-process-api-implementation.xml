@@ -70,7 +70,9 @@ else
 			</batch:process-records>
 		</batch:job>
 	</flow>
-	<flow name="sendToTelegramFlow" doc:id="0b437dd6-5b0e-49b3-8d75-26232154d4ee" />
+	<flow name="sendToTelegramFlow" doc:id="0b437dd6-5b0e-49b3-8d75-26232154d4ee" >
+		<logger level="INFO" doc:name="notImplemented" doc:id="71d7ecce-b832-4aec-b794-85d69ff4ff24" />
+	</flow>
 	<sub-flow name="sendToWhatsAppSubFlow" doc:id="4e3a236e-061b-4e27-8e61-05eb469a8cd3" >
 		<logger level="INFO" doc:name="notImplemented" doc:id="4c6fead2-5697-4d61-9a17-dd152920dec3" />
 	</sub-flow>

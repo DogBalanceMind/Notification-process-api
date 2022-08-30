@@ -7,7 +7,7 @@
             </tls:context>
         </http:listener-connection>
     </http:listener-config>
-    <apikit:config name="notification-process-api-config" api="resource::a33f23d5-1d66-4edc-937f-b275ecc37a3a:notification-process-api:1.0.6:raml:zip:notification-process-api.raml" outboundHeadersMapName="outboundHeaders" httpStatusVarName="httpStatus" />
+    <apikit:config name="notification-process-api-config" api="resource::a33f23d5-1d66-4edc-937f-b275ecc37a3a:notification-process-api:1.0.8:raml:zip:notification-process-api.raml" outboundHeadersMapName="outboundHeaders" httpStatusVarName="httpStatus" />
     <import doc:name="common-utils-global.xml" doc:id="dcaf8514-b1c2-4c79-92af-fbb7746a2866" file="common-utils-global.xml" />
     <import doc:name="common-utils-error-handler.xml" doc:id="bb6c3921-5a4e-4594-863f-96c074476879" file="common-utils-error-handler.xml" />
     <import doc:name="common-utils.xml" doc:id="f1d0ff9e-2c04-4c50-a76c-a766e73816ef" file="common-utils.xml" />

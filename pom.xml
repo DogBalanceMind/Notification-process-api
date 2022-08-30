@@ -61,7 +61,7 @@
 		<dependency>
 			<groupId>a33f23d5-1d66-4edc-937f-b275ecc37a3a</groupId>
 			<artifactId>notification-process-api</artifactId>
-			<version>1.0.6</version>
+			<version>1.0.8</version>
 			<classifier>raml</classifier>
 			<type>zip</type>
 		</dependency>
