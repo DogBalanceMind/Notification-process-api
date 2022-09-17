@@ -38,6 +38,7 @@ if (checkIfNotify(payload)) payload.cryptocurrencies map (object, index) -> do {
     ---
     {
     'Name': cryptocurrency.name,
+    'You have': object.number,
     'You bought for': object.userPrice,
     'Price now':  cryptocurrency.price,
     'Change for 1 hour': cryptocurrency.percentChange1h,
@@ -53,12 +54,25 @@ else {}]]></ee:set-payload>
 				<batch:step name="sendBatchStep" doc:id="0322054e-2885-48f8-bb5f-86ee2421270a" acceptExpression="#[!isEmpty(payload)]">
 					<scatter-gather doc:name="Scatter-Gather" doc:id="fb3935ca-0b3d-4475-8284-636e4373bf7e">
 						<route >
-							<ee:transform doc:name="sendToTelegram" doc:id="68e4e39b-0173-473b-bc53-d15d9ca1a391" >
-								<ee:message >
-									<ee:set-payload ><![CDATA[%dw 2.0
+							<ee:transform doc:name="sendToTelegram" doc:id="68e4e39b-0173-473b-bc53-d15d9ca1a391">
+								<ee:message>
+									<ee:set-payload><![CDATA[%dw 2.0
 output application/json
 ---
 if (payload.subscribeIn.telegram?)
+	lookup(payload, 'sendToTelegramFlow', 5000)
+else
+	null]]></ee:set-payload>
+								</ee:message>
+							</ee:transform>
+						</route>
+						<route >
+							<ee:transform doc:name="sendToWhatsApp" doc:id="3b2f78e4-c518-4fd0-a617-224ce5b2ea61">
+								<ee:message>
+									<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+if (payload.subscribeIn.whatsApp?)
 	lookup(payload, 'sendToTelegramFlow', 5000)
 else
 	null]]></ee:set-payload>
@@ -71,13 +85,13 @@ else
 		</batch:job>
 	</flow>
 	<flow name="sendToTelegramFlow" doc:id="0b437dd6-5b0e-49b3-8d75-26232154d4ee" >
-		<logger level="INFO" doc:name="notImplemented" doc:id="71d7ecce-b832-4aec-b794-85d69ff4ff24" />
+		<flow-ref doc:name="notImlementedSubFlow" doc:id="7b369072-637d-4385-9be9-492aa84d1ec3" name="notImlementedSubFlow" />
 	</flow>
-	<sub-flow name="sendToWhatsAppSubFlow" doc:id="4e3a236e-061b-4e27-8e61-05eb469a8cd3" >
-		<logger level="INFO" doc:name="notImplemented" doc:id="4c6fead2-5697-4d61-9a17-dd152920dec3" />
-	</sub-flow>
+	<flow name="sendToWhatsAppFlow" doc:id="4afd02d6-fe4b-4601-980b-3226156c64fb" >
+		<flow-ref doc:name="notImlementedSubFlow" doc:id="736e8ad3-2bc2-4470-b7cd-20cb5ea6fcc1" name="notImlementedSubFlow" />
+	</flow>
 	<sub-flow name="sendToEmailSubFlow" doc:id="3c15c0b2-fff6-4d9d-bbf8-11bd8a03d0b7" >
-		<logger level="INFO" doc:name="notImplemented" doc:id="1f60561c-78f3-44cb-adf0-5d2a26424210" />
+		<flow-ref doc:name="notImlementedSubFlow" doc:id="99fd5211-8dc2-458a-b676-cee8976bc579" name="notImlementedSubFlow" />
 	</sub-flow>
 	<sub-flow name="getUserSubFlow" doc:id="0b730cea-4ffb-409e-9375-e9319bc169c1" >
 		<http:request method="GET" doc:name="getUser" doc:id="3e5000e6-b68f-4dde-95b5-1f8a0157c999" config-ref="HTTP_Request_configuration_to_mongodb-system-api" path="/user" >
@@ -181,5 +195,8 @@ else
 	<sub-flow name="validateResponseSubFlow" doc:id="a8bd04e1-2229-4fd3-873b-b5cfaa862344">
 		<set-variable value="#[attributes.statusCode]" doc:name="setHttpStatus" doc:id="ca58744d-d79c-43f0-8c59-13f189dbb729" variableName="httpStatus" />
 		<set-payload value='#["something"]' doc:name="setResponse" doc:id="36c5e8f1-61e1-4eeb-bde8-ff31ef12b2e0" />
+	</sub-flow>
+	<sub-flow name="sendEverybodySubFlow" doc:id="25cdb37c-fcbd-4034-ac76-331dcdab4689" >
+		<flow-ref doc:name="notImlementedSubFlow" doc:id="83ea81eb-c0be-446c-ace7-fca1c229723d" name="notImlementedSubFlow"/>
 	</sub-flow>
 </mule>

@@ -38,7 +38,7 @@
         </ee:transform>
         <flow-ref doc:name="getUserSubFlow" doc:id="d212bdda-9a20-45a7-ac8c-c3f5066013ef" name="getUserSubFlow" />
     </flow>
-	<flow name="post:\subscribe:application\json:notification-process-api-config">
+    <flow name="post:\subscribe:application\json:notification-process-api-config">
         <ee:transform doc:name="setFlowNameVar" doc:id="c51360d8-a1cb-4a03-b144-cde702448ec8">
             <ee:message />
             <ee:variables>
@@ -47,7 +47,7 @@
         </ee:transform>
         <flow-ref doc:name="subscribeUserSubFlow" doc:id="436a3d31-59ac-43e4-aa9b-367e9ddb8b37" name="subscribeUserSubFlow" />
     </flow>
-	<flow name="patch:\subscribe:application\json:notification-process-api-config">
+    <flow name="patch:\subscribe:application\json:notification-process-api-config">
         <ee:transform doc:name="setFlowNameVar" doc:id="871876fe-ec02-429e-b3e2-da39cd7b4bd6">
             <ee:message />
             <ee:variables>
@@ -56,7 +56,7 @@
         </ee:transform>
         <flow-ref doc:name="updateUserSubscriptionsSubFlow" doc:id="cef873e9-ede3-4c3c-bd45-45d3bd639e6f" name="updateUserSubscriptionsSubFlow" />
     </flow>
-	<flow name="delete:\subscribe:notification-process-api-config">
+    <flow name="delete:\subscribe:notification-process-api-config">
         <ee:transform doc:name="setFlowNameVar" doc:id="0e80fa54-f88d-460b-bcfe-7462525fa2c6">
             <ee:message />
             <ee:variables>
@@ -66,11 +66,12 @@
         <flow-ref doc:name="unsubscribeUserSubFlow" doc:id="c3a5d32d-9b74-4432-a09b-be1ecf8b7a1d" name="unsubscribeUserSubFlow" />
     </flow>
     <flow name="post:\sendEverybody:application\json:notification-process-api-config">
-		<ee:transform doc:name="setFlowNameVar" doc:id="712567f9-531b-497b-bbad-b1797f577f0d" >
-			<ee:message />
-			<ee:variables >
-				<ee:set-variable resource="dwl/flowNameVar.dwl" variableName="flowName" />
-			</ee:variables>
-		</ee:transform>
+        <ee:transform doc:name="setFlowNameVar" doc:id="712567f9-531b-497b-bbad-b1797f577f0d">
+            <ee:message />
+            <ee:variables>
+                <ee:set-variable resource="dwl/flowNameVar.dwl" variableName="flowName" />
+            </ee:variables>
+        </ee:transform>
+        <flow-ref doc:name="sendEverybodySubFlow" doc:id="0633f973-6cd5-41ed-a693-148efb47f234" name="sendEverybodySubFlow" />
     </flow>
 </mule>
